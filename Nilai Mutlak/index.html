@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Latihan Adaptif Nilai Mutlak</title>
+
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+}
+h2 {
+  border-bottom: 2px solid #ccc;
+}
+.option {
+  margin: 6px 0;
+}
+button {
+  margin-top: 15px;
+  padding: 8px 16px;
+}
+.correct { color: green; }
+.wrong { color: red; }
+.stats {
+  margin: 10px 0;
+  font-size: 0.95em;
+  color: #444;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Latihan Adaptif – Nilai Mutlak</h1>
+
+<p>
+Jawablah soal dengan benar untuk menguasai level.
+Level naik jika <b>mastery ≥ 80%</b> dan minimal 5 soal.
+</p>
+
+<h2 id="levelTitle">Level 1</h2>
+
+<div class="stats" id="stats"></div>
+
+<p id="questionText"></p>
+<div id="mathExpr"></div>
+
+<form id="options"></form>
+
+<button onclick="checkAnswer()">Cek Jawaban</button>
+
+<p id="feedback"></p>
+
+<script>
+/* =====================
+   STATE
+===================== */
+
+let level = 1;
+let correctAnswer = "";
+
+let mastery = {
+  1: { correct: 0, total: 0 },
+  2: { correct: 0, total: 0 },
+  3: { correct: 0, total: 0 },
+  4: { correct: 0, total: 0 },
+  5: { correct: 0, total: 0 }
+};
+
+/* =====================
+   UTIL
+===================== */
+
+function randomInt(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+function shuffle(arr) {
+  return arr.sort(() => Math.random() - 0.5);
+}
+
+function masteryRate(lv) {
+  let m = mastery[lv];
+  if (m.total === 0) return 0;
+  return Math.round((m.correct / m.total) * 100);
+}
+
+/* =====================
+   GENERATOR SOAL
+===================== */
+
+function generateQuestion() {
+  let qText = "";
+  let math = "";
+  let options = [];
+  let correct = "";
+
+  if (level === 1) {
+    let x = randomInt(-9, 9);
+    qText = "Tentukan nilai dari:";
+    math = `|${x}|`;
+    correct = Math.abs(x).toString();
+    options = shuffle([
+      correct,
+      (-Math.abs(x)).toString(),
+      (Math.abs(x) + 1).toString(),
+      (Math.abs(x) - 1).toString(),
+      x.toString()
+    ]);
+  }
+
+  if (level === 2) {
+    let a = randomInt(2, 9);
+    qText = "Himpunan solusi dari persamaan:";
+    math = `|x| = ${a}`;
+    correct = `{-${a}, ${a}}`;
+    options = shuffle([
+      correct,
+      `{${a}}`,
+      `{-${a}}`,
+      `{0, ${a}}`,
+      `{${a-1}, ${a+1}}`
+    ]);
+  }
+
+  if (level === 3) {
+    let a = randomInt(-5, 5);
+    let b = randomInt(1, 6);
+    qText = "Himpunan solusi dari persamaan:";
+    math = `|x ${a>=0?'-':'+'} ${Math.abs(a)}| = ${b}`;
+    correct = `{${a-b}, ${a+b}}`;
+    options = shuffle([
+      correct,
+      `{${a+b}}`,
+      `{${a-b}}`,
+      `{${b-a}, ${b+a}}`,
+      `{${a}, ${b}}`
+    ]);
+  }
+
+  if (level === 4) {
+    let a = randomInt(1, 6);
+    qText = "Himpunan solusi dari pertidaksamaan:";
+    math = `|x| < ${a}`;
+    correct = `(-${a}, ${a})`;
+    options = shuffle([
+      correct,
+      `(-∞, -${a}) ∪ (${a}, ∞)`,
+      `[ -${a}, ${a} ]`,
+      `(-∞, ${a})`,
+      `(-${a}, ∞)`
+    ]);
+  }
+
+  if (level >= 5) {
+    let a = randomInt(-3, 3);
+    let b = randomInt(2, 4);
+    qText = "Tentukan himpunan solusi dari persamaan:";
+    math = `|x - ${a}| + |x + ${b}| = ${Math.abs(a)+Math.abs(b)}`;
+    correct = `{${a}, ${-b}}`;
+    options = shuffle([
+      correct,
+      `{${a+1}, ${-b-1}}`,
+      `{${a-1}}`,
+      `{${-b+1}}`,
+      `{${a}, ${b}}`
+    ]);
+  }
+
+  correctAnswer = correct;
+
+  document.getElementById("questionText").innerText = qText;
+  document.getElementById("mathExpr").innerHTML = `\\[${math}\\]`;
+  document.getElementById("options").innerHTML =
+    options.map(o =>
+      `<div class="option">
+        <input type="radio" name="opt" value="${o}"> ${o}
+      </div>`
+    ).join("");
+
+  document.getElementById("stats").innerText =
+    `Benar: ${mastery[level].correct} / ${mastery[level].total}
+     | Mastery: ${masteryRate(level)}%`;
+
+  MathJax.typeset();
+}
+
+/* =====================
+   CEK JAWABAN
+===================== */
+
+function checkAnswer() {
+  let selected = document.querySelector('input[name="opt"]:checked');
+  if (!selected) return;
+
+  mastery[level].total++;
+
+  if (selected.value === correctAnswer) {
+    mastery[level].correct++;
+    document.getElementById("feedback").innerHTML =
+      "<span class='correct'>✔ Jawaban benar.</span>";
+  } else {
+    document.getElementById("feedback").innerHTML =
+      "<span class='wrong'>✘ Jawaban salah.</span>";
+  }
+
+  if (mastery[level].total >= 5 && masteryRate(level) >= 80) {
+    level++;
+    document.getElementById("feedback").innerHTML +=
+      "<br><b>🎉 Level naik! Anda telah menguasai level ini.</b>";
+  }
+
+  document.getElementById("levelTitle").innerText = "Level " + level;
+  generateQuestion();
+}
+
+generateQuestion();
+</script>
+
+</body>
+</html>
